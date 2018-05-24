@@ -363,13 +363,14 @@ namespace steem { namespace protocol {
    void pow::create( const fc::ecc::private_key& w, const digest_type& i )
    {
       input  = i;
-      signature = w.sign_compact(input,false);
+      signature = w.sign_compact( input, fc::ecc::non_canonical );
 
       auto sig_hash            = fc::sha256::hash( signature );
-      public_key_type recover  = fc::ecc::public_key( signature, sig_hash, false );
+      public_key_type recover  = fc::ecc::public_key( signature, sig_hash, fc::ecc::non_canonical );
 
       work = fc::sha256::hash(recover);
    }
+
    void pow2::create( const block_id_type& prev, const account_name_type& account_name, uint64_t n )
    {
       input.worker_account = account_name;
@@ -378,7 +379,7 @@ namespace steem { namespace protocol {
 
       auto prv_key = fc::sha256::hash( input );
       auto input = fc::sha256::hash( prv_key );
-      auto signature = fc::ecc::private_key::regenerate( prv_key ).sign_compact(input);
+      auto signature = fc::ecc::private_key::regenerate( prv_key ).sign_compact( input, fc::ecc::fc_canonical );
 
       auto sig_hash            = fc::sha256::hash( signature );
       public_key_type recover  = fc::ecc::public_key( signature, sig_hash );
@@ -401,9 +402,9 @@ namespace steem { namespace protocol {
    void pow::validate()const
    {
       FC_ASSERT( work != fc::sha256() );
-      FC_ASSERT( public_key_type(fc::ecc::public_key( signature, input, false )) == worker );
+      FC_ASSERT( public_key_type(fc::ecc::public_key( signature, input, fc::ecc::non_canonical ) ) == worker );
       auto sig_hash = fc::sha256::hash( signature );
-      public_key_type recover  = fc::ecc::public_key( signature, sig_hash, false );
+      public_key_type recover  = fc::ecc::public_key( signature, sig_hash, fc::ecc::non_canonical );
       FC_ASSERT( work == fc::sha256::hash(recover) );
    }
 
@@ -472,7 +473,7 @@ namespace steem { namespace protocol {
                   ),
                "Limit order must be for the STEEM:SBD or SMT:(STEEM/SBD) market" );
 
-      FC_ASSERT( (amount_to_sell * exchange_rate).amount > 0, "Amount to sell cannot round to 0 when traded" );
+      FC_ASSERT( ( amount_to_sell * exchange_rate ).amount > 0, "Amount to sell cannot round to 0 when traded" );
    }
 
    void limit_order_cancel_operation::validate()const
@@ -642,9 +643,9 @@ namespace steem { namespace protocol {
       bool is_substantial_reward = reward_tokens.begin()->amount > 0;
       for( auto itl = reward_tokens.begin(), itr = itl+1; itr != reward_tokens.end(); ++itl, ++itr )
       {
-         FC_ASSERT( itl->symbol.to_nai() <= itr->symbol.to_nai(), 
+         FC_ASSERT( itl->symbol.to_nai() <= itr->symbol.to_nai(),
                     "Reward tokens have not been inserted in ascending order." );
-         FC_ASSERT( itl->symbol.to_nai() != itr->symbol.to_nai(), 
+         FC_ASSERT( itl->symbol.to_nai() != itr->symbol.to_nai(),
                     "Duplicate symbol ${s} inserted into claim reward operation container.", ("s", itl->symbol) );
          FC_ASSERT( itr->amount >= 0, "Cannot claim a negative amount" );
          is_substantial_reward |= itr->amount > 0;
