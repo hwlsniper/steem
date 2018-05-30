@@ -1279,7 +1279,7 @@ void calculate_power_shares( i_voting_helper* voting_helper, t_voter_asset_info*
       info->abs_rshares -= STEEM_VOTE_DUST_THRESHOLD;
       info->abs_rshares = std::max( int64_t(0), info->abs_rshares );
    }
-   if( db.has_hardfork( STEEM_HARDFORK_0_14__259 ) )
+   else if( db.has_hardfork( STEEM_HARDFORK_0_14__259 ) )
    {
       FC_ASSERT( info->abs_rshares > STEEM_VOTE_DUST_THRESHOLD || vote_weight == 0, "Voting weight is too small, please accumulate more voting power or steem power." );
    }
